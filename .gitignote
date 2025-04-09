@@ -1,0 +1,56 @@
+# 依存関係
+node_modules/
+npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ビルド出力
+dist/
+dist-ssr/
+build/
+*.local
+
+# TypeScript
+*.tsbuildinfo
+.tscache/
+
+# エディター設定
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 環境変数
+.env
+.env.*
+!.env.example
+
+# macOS固有のファイル
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# キャッシュと一時ファイル
+.cache/
+.temp/
+.tmp/
+coverage/
+
+# MCP関連
+.mcp-cache/
+.mcp-output/
+
+# ログファイル
+logs/
+*.log
