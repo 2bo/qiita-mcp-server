@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { getToolDefinitions } from "./tools/qiitaTools.js";
@@ -10,7 +12,7 @@ import { getToolDefinitions } from "./tools/qiitaTools.js";
 // MCPサーバーを作成
 const server = new McpServer({
   name: "Qiita MCP Server",
-  version: "1.0.0"
+  version: "0.1.0"
 });
 
 // ツールの定義を取得して登録（モジュールベースの実装）
