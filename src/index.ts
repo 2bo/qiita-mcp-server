@@ -37,11 +37,33 @@ server.tool("get_my_qiita_user_posts",
       }
       
       const items = await response.json();
+      
+      // LLMの入力トークン数を削減するために項目を削減
+      const filteredItems = items.map((item: any) => {
+        const { rendered_body, body, ...rest } = item;
+        
+        if (rest.user) {
+          const {
+            facebook_id,
+            followees_count,
+            followers_count,
+            github_login_name,
+            profile_image_url,
+            team_only,
+            twitter_screen_name,
+            website_url,
+            ...userRest
+          } = rest.user;
+          rest.user = userRest;
+        }
+        return rest;
+      });
+      
       return {
         content: [
           { 
             type: "text", 
-            text: JSON.stringify(items, null, 2) 
+            text: JSON.stringify(filteredItems, null, 2) 
           }
         ]
       };
