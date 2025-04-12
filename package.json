@@ -13,7 +13,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc && chmod +x dist/index.js",
+    "build": "rimraf dist && tsc && chmod +x dist/index.js",
     "prepare": "npm run build",
     "dev": "tsc --watch"
   },
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "rimraf": "^6.0.1",
     "typescript": "^5.8.2"
   },
   "engines": {
