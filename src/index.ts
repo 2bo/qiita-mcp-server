@@ -9,8 +9,8 @@ const server = new McpServer({
 });
 
 // Add Qiita authenticated user items tool
-server.tool("get_my_qiita_user_posts",
-  "get current authenticated user qiita posts",
+server.tool("get_my_qiita_user_articles",
+  "get current authenticated user qiita articles",
   {
     page: z.number().optional().default(1).describe("Page number for pagination"),
     per_page: z.number().optional().default(20).describe("Number of items per page"),
