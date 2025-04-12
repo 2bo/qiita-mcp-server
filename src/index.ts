@@ -190,6 +190,91 @@ server.tool("get_qiita_markdown_rules",
   }
 );
 
+// Add Qiita update article tool
+server.tool("update_qiita_article",
+  "update an existing Qiita article",
+  {
+    item_id: z.string().describe("The ID of the article to update"),
+    title: z.string().describe("Article title"),
+    body: z.string().describe("Markdown formatted content"),
+    tags: z.array(z.object({
+      name: z.string().describe("Tag name"),
+      versions: z.array(z.string()).optional().describe("Versions (optional)")
+    })).optional().describe("List of tags for the article"),
+    private: z.boolean().optional().describe("Whether the article is private"),
+    organization_url_name: z.string().optional().describe("The url_name of the organization for the article"),
+    slide: z.boolean().optional().describe("Whether to enable slide mode")
+  },
+  async ({ item_id, title, body, tags, private: isPrivate, organization_url_name, slide }) => {
+    try {
+      // 環境変数からのみトークンを取得
+      const apiToken = process.env.QIITA_API_TOKEN;
+      
+      // トークンが設定されていない場合はエラー
+      if (!apiToken) {
+        throw new Error('Qiita API token is not provided. Set QIITA_API_TOKEN environment variable before using this tool.');
+      }
+
+      // リクエストボディの作成
+      const requestBody: Record<string, any> = {
+        title,
+        body,
+        tags,
+        private: isPrivate,
+        organization_url_name,
+        slide,
+      };
+      
+      // undefinedのフィールドを削除
+      Object.keys(requestBody).forEach(key => {
+        if (requestBody[key] === undefined) {
+          delete requestBody[key];
+        }
+      });
+      
+      const response = await fetch(`https://qiita.com/api/v2/items/${item_id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Qiita API returned ${response.status}: ${response.statusText}\n${errorText}`);
+      }
+      
+      const item = await response.json();
+      
+      // LLMの入力トークン数を削減するために項目を削減 - rendered_bodyだけを除外
+      const { rendered_body, ...rest } = item;
+      
+      return {
+        content: [
+          { 
+            type: "text", 
+            text: `記事が正常に更新されました。\nタイトル: ${rest.title}\nURL: ${rest.url}\n\n` + 
+                  JSON.stringify(rest, null, 2) 
+          }
+        ]
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        content: [
+          { 
+            type: "text", 
+            text: `Error updating Qiita article: ${errorMessage}` 
+          }
+        ],
+        isError: true
+      };
+    }
+  }
+);
+
 // Add Qiita post article tool
 server.tool("post_qiita_article",
   "create a new article on Qiita",
