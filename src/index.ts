@@ -12,8 +12,8 @@ const server = new McpServer({
 server.tool("get_my_qiita_user_posts",
   "get current authenticated user qiita posts",
   {
-    page: z.number().optional().default(1),
-    per_page: z.number().optional().default(20),
+    page: z.number().optional().default(1).describe("Page number for pagination"),
+    per_page: z.number().optional().default(20).describe("Number of items per page"),
   },
   async ({ page, per_page }) => {
     try {
@@ -110,11 +110,14 @@ server.tool("get_qiita_item",
       }
       
       const item = await response.json();
+      // LLMの入力トークン数を削減するために項目を削減 - rendered_bodyだけを除外
+      const { rendered_body, ...rest } = item;
+
       return {
         content: [
           { 
             type: "text", 
-            text: JSON.stringify(item, null, 2) 
+            text: JSON.stringify(rest, null, 2) 
           }
         ]
       };
