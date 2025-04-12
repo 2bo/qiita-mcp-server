@@ -133,6 +133,60 @@ server.tool("get_qiita_item",
   }
 );
 
+// Add Qiita markdown rules tool
+server.tool("get_qiita_markdown_rules",
+  "get Qiita markdown syntax rules, cheat sheet",
+  {},
+  async () => {
+    try {
+      // 環境変数からのみトークンを取得
+      const apiToken = process.env.QIITA_API_TOKEN;
+      
+      // トークンが設定されていない場合はエラー
+      if (!apiToken) {
+        throw new Error('Qiita API token is not provided. Set QIITA_API_TOKEN environment variable before using this tool.');
+      }
+      
+      // Qiitaのmarkdownルール記事IDを固定で使用
+      const item_id = "c686397e4a0f4f11683d";
+      
+      const response = await fetch(`https://qiita.com/api/v2/items/${item_id}`, {
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Qiita API returned ${response.status}: ${response.statusText}`);
+      }
+      
+      const item = await response.json();
+      
+      // bodyフィールド（Markdown形式）のみを抽出
+      return {
+        content: [
+          { 
+            type: "text", 
+            text: item.body || "Markdownコンテンツが見つかりませんでした。"
+          }
+        ]
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        content: [
+          { 
+            type: "text", 
+            text: `Error fetching Qiita markdown rules: ${errorMessage}` 
+          }
+        ],
+        isError: true
+      };
+    }
+  }
+);
+
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
 await server.connect(transport);
