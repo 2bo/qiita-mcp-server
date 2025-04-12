@@ -75,7 +75,59 @@ server.tool("get_my_qiita_user_posts",
             type: "text", 
             text: `Error fetching Qiita items: ${errorMessage}` 
           }
+        ],
+        isError: true
+      };
+    }
+  }
+);
+
+// Add Qiita item detail tool
+server.tool("get_qiita_item",
+  "get a specific Qiita article by its ID",
+  {
+    item_id: z.string().describe("The ID of the Qiita article to fetch"),
+  },
+  async ({ item_id }) => {
+    try {
+      // 環境変数からのみトークンを取得
+      const apiToken = process.env.QIITA_API_TOKEN;
+      
+      // トークンが設定されていない場合はエラー
+      if (!apiToken) {
+        throw new Error('Qiita API token is not provided. Set QIITA_API_TOKEN environment variable before using this tool.');
+      }
+      
+      const response = await fetch(`https://qiita.com/api/v2/items/${item_id}`, {
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Qiita API returned ${response.status}: ${response.statusText}`);
+      }
+      
+      const item = await response.json();
+      return {
+        content: [
+          { 
+            type: "text", 
+            text: JSON.stringify(item, null, 2) 
+          }
         ]
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        content: [
+          { 
+            type: "text", 
+            text: `Error fetching Qiita item: ${errorMessage}` 
+          }
+        ],
+        isError: true
       };
     }
   }
