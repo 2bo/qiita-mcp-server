@@ -26,7 +26,7 @@ The server provides the following MCP tools:
 
 ### Prerequisites
 
-- Node.js (>=18.0.0)
+- Node.js (>=20.0.0)
 - A Qiita account with API access token
   - You can generate a Qiita API token by visiting: https://qiita.com/settings/tokens/new
 
