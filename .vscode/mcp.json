@@ -1,20 +1,9 @@
 {
-  "inputs": [
-    {
-      "type": "promptString",
-      "id": "qiita-api-token",
-      "description": "Qiita API Token",
-      "password": true
-    }
-  ],
   "servers": {
     "qiita-mcp-server": {
       "type": "stdio",
       "command": "node",
       "args": ["${workspaceFolder}/dist/index.js"],
-      "env": {
-        "QIITA_API_TOKEN": "${input:qiita-api-token}"
-      },
     }
   }
 }
