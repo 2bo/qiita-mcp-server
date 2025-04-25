@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server for interacting with Qiita, the knowledge-sharing platform for engineers.
 
+<a href="https://glama.ai/mcp/servers/@2bo/qiita-mcp-server">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@2bo/qiita-mcp-server/badge" alt="Qiita Server MCP server" />
+</a>
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
