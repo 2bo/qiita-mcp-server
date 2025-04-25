@@ -1,3 +1,5 @@
+[![MseeP Badge](https://mseep.net/pr/2bo-qiita-mcp-server-badge.jpg)](https://mseep.ai/app/2bo-qiita-mcp-server)
+
 # Qiita MCP Server
 
 A Model Context Protocol (MCP) server for interacting with Qiita, the knowledge-sharing platform for engineers.
