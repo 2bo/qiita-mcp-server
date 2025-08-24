@@ -57,6 +57,11 @@ The server provides the following MCP tools:
 }
 ```
 
+### Environment Variables
+
+- `QIITA_API_TOKEN`: Your Qiita API access token (required)
+- `QIITA_TEAM_SUBDOMAIN`: Your Qiita Team subdomain (optional, for Qiita Team users only)
+
 ## Development
 
 ### Setup

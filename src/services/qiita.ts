@@ -3,11 +3,18 @@
  * API通信の共通処理を提供します
  */
 export class QiitaApiService {
-  private readonly baseUrl = 'https://qiita.com/api/v2';
+  private readonly baseUrl: string;
   private apiToken: string | undefined;
+  private teamSubdomain: string | undefined;
 
   constructor() {
     this.apiToken = process.env.QIITA_API_TOKEN;
+    this.teamSubdomain = process.env.QIITA_TEAM_SUBDOMAIN;
+    
+    // QiitaTeamのサブドメインが指定されている場合はそちらを使用
+    this.baseUrl = this.teamSubdomain 
+      ? `https://${this.teamSubdomain}.qiita.com/api/v2`
+      : 'https://qiita.com/api/v2';
   }
 
   /**
