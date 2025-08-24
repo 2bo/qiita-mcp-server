@@ -213,6 +213,37 @@ export class QiitaApiService {
   };
 
   /**
+   * 記事を検索
+   */
+  searchItems = async (
+    query: string,
+    options: {
+      page?: number;
+      per_page?: number;
+    } = {}
+  ): Promise<any[]> => {
+    const { page = 1, per_page = 20 } = options;
+    
+    const params = new URLSearchParams({
+      query: query,
+      page: page.toString(),
+      per_page: per_page.toString()
+    });
+    
+    const response = await fetch(
+      `${this.baseUrl}/items?${params}`,
+      { headers: this.apiToken ? this.getHeaders() : { 'Content-Type': 'application/json' } }
+    );
+    
+    if (!response.ok) {
+      await this.handleErrorResponse(response);
+    }
+    
+    const items = await response.json();
+    return this.filterItems(items);
+  };
+
+  /**
    * Markdown構文ガイドを取得
    * Qiitaの特定記事のbodyを返す
    */
