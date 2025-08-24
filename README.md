@@ -18,6 +18,7 @@ The server provides the following MCP tools:
 |-----------|-------------|
 | `get_my_qiita_articles` | Get current authenticated user's Qiita articles |
 | `get_qiita_item` | Get a specific Qiita article by its ID |
+| `search_qiita_articles` | Search Qiita articles with query string (supports keywords, tags, users) |
 | `post_qiita_article` | Create a new article on Qiita |
 | `update_qiita_article` | Update an existing Qiita article |
 | `get_qiita_markdown_rules` | Get Qiita markdown syntax rules and cheat sheet |

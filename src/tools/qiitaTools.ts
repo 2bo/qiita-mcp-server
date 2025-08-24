@@ -116,6 +116,24 @@ const updateQiitaArticle = async (params: UpdateArticleParams): Promise<any> => 
   }
 };
 
+const searchArticlesSchema = z.object({
+  query: z.string().describe("Search query string (e.g., 'qiita user:Qiita', 'TypeScript tag:React')"),
+  page: z.number().optional().default(1).describe("Page number (1-100)"),
+  per_page: z.number().optional().default(20).describe("Number of items per page (1-100)")
+});
+type SearchArticlesParams = z.infer<typeof searchArticlesSchema>;
+
+const searchQiitaArticles = async (params: SearchArticlesParams): Promise<any> => {
+  try {
+    const { query, page = 1, per_page = 20 } = params;
+    const items = await apiService.searchItems(query, { page, per_page });
+    return createSuccessResponse(JSON.stringify(items, null, 2));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return createErrorResponse(`Error searching Qiita articles: ${errorMessage}`);
+  }
+};
+
 const getQiitaMarkdownRules = async (): Promise<any> => {
   try {
     const markdownRules = await apiService.getMarkdownRules();
@@ -139,6 +157,12 @@ export const getToolDefinitions = () => {
       description: "get a specific Qiita article by its ID",
       parameters: getItemSchema.shape,
       handler: (params: GetItemParams) => getQiitaItem(params)
+    },
+    {
+      name: "search_qiita_articles",
+      description: "search Qiita articles with query string (supports keywords, tags, users)",
+      parameters: searchArticlesSchema.shape,
+      handler: (params: SearchArticlesParams) => searchQiitaArticles(params)
     },
     {
       name: "update_qiita_article",
