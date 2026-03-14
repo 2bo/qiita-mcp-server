@@ -1,28 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { QiitaApiService } from "../../src/services/qiita.js";
-
-const originalToken = process.env.QIITA_API_TOKEN;
-
-const jsonResponse = (body: unknown, init?: ResponseInit) =>
-  new Response(JSON.stringify(body), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-    ...init,
-  });
+import { QiitaApiService } from "./qiita.js";
+import {
+  clearQiitaApiToken,
+  jsonResponse,
+  restoreQiitaApiToken,
+} from "../testUtils.js";
 
 describe("QiitaApiService", () => {
   beforeEach(() => {
-    delete process.env.QIITA_API_TOKEN;
+    clearQiitaApiToken();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
-    if (originalToken === undefined) {
-      delete process.env.QIITA_API_TOKEN;
-    } else {
-      process.env.QIITA_API_TOKEN = originalToken;
-    }
+    restoreQiitaApiToken();
   });
 
   it("throws when the API token is missing", async () => {
@@ -155,6 +147,23 @@ describe("QiitaApiService", () => {
           "Content-Type": "application/json",
         },
       }
+    );
+  });
+
+  it("returns a fallback message when markdown rules body is missing", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        id: "c686397e4a0f4f11683d",
+        title: "Markdown rules",
+      })
+    );
+    const service = new QiitaApiService({
+      apiToken: "injected-token",
+      fetchImpl: fetchMock,
+    });
+
+    await expect(service.getMarkdownRules()).resolves.toBe(
+      "Markdownコンテンツが見つかりませんでした。"
     );
   });
 });

@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { createServer } from "../../src/server.js";
+import { connectTestClient, createMockQiitaService } from "../../src/testUtils.js";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -9,19 +7,13 @@ afterEach(() => {
 
 describe("createServer", () => {
   it("registers the Qiita tools over MCP", async () => {
-    const mockService = {
-      getAuthenticatedUserItems: vi.fn().mockResolvedValue([]),
+    const mockService = createMockQiitaService({
       getItem: vi.fn().mockResolvedValue({ id: "item-1" }),
       updateItem: vi.fn().mockResolvedValue({ id: "item-1", title: "Updated" }),
       createItem: vi.fn().mockResolvedValue({ id: "item-1", title: "Created" }),
       getMarkdownRules: vi.fn().mockResolvedValue("rules"),
-    };
-    const server = createServer(mockService);
-    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-    const client = new Client({ name: "test-client", version: "1.0.0" });
-
-    await server.connect(serverTransport);
-    await client.connect(clientTransport);
+    });
+    const { client } = await connectTestClient(mockService);
 
     const tools = await client.listTools();
 
@@ -35,19 +27,10 @@ describe("createServer", () => {
   });
 
   it("applies default pagination when called through MCP", async () => {
-    const mockService = {
+    const mockService = createMockQiitaService({
       getAuthenticatedUserItems: vi.fn().mockResolvedValue([{ id: "item-1" }]),
-      getItem: vi.fn(),
-      updateItem: vi.fn(),
-      createItem: vi.fn(),
-      getMarkdownRules: vi.fn(),
-    };
-    const server = createServer(mockService);
-    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-    const client = new Client({ name: "test-client", version: "1.0.0" });
-
-    await server.connect(serverTransport);
-    await client.connect(clientTransport);
+    });
+    const { client } = await connectTestClient(mockService);
 
     const result = await client.callTool({
       name: "get_my_qiita_articles",
@@ -65,19 +48,10 @@ describe("createServer", () => {
   });
 
   it("returns tool failures as MCP error results", async () => {
-    const mockService = {
+    const mockService = createMockQiitaService({
       getAuthenticatedUserItems: vi.fn().mockRejectedValue(new Error("boom")),
-      getItem: vi.fn(),
-      updateItem: vi.fn(),
-      createItem: vi.fn(),
-      getMarkdownRules: vi.fn(),
-    };
-    const server = createServer(mockService);
-    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-    const client = new Client({ name: "test-client", version: "1.0.0" });
-
-    await server.connect(serverTransport);
-    await client.connect(clientTransport);
+    });
+    const { client } = await connectTestClient(mockService);
 
     const result = await client.callTool({
       name: "get_my_qiita_articles",

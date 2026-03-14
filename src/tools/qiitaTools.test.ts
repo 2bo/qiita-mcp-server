@@ -1,27 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-const originalToken = process.env.QIITA_API_TOKEN;
-
-const jsonResponse = (body: unknown, init?: ResponseInit) =>
-  new Response(JSON.stringify(body), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-    ...init,
-  });
+import {
+  clearQiitaApiToken,
+  createMockQiitaService,
+  jsonResponse,
+  restoreQiitaApiToken,
+} from "../testUtils.js";
 
 describe("getToolDefinitions", () => {
   beforeEach(() => {
-    delete process.env.QIITA_API_TOKEN;
+    clearQiitaApiToken();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
-    if (originalToken === undefined) {
-      delete process.env.QIITA_API_TOKEN;
-    } else {
-      process.env.QIITA_API_TOKEN = originalToken;
-    }
+    restoreQiitaApiToken();
   });
 
   it("exposes the expected tool names", async () => {
@@ -94,13 +87,9 @@ describe("getToolDefinitions", () => {
 
   it("uses an injected service instead of the module default", async () => {
     const { getToolDefinitions } = await importCurrentModule();
-    const mockService = {
+    const mockService = createMockQiitaService({
       getAuthenticatedUserItems: vi.fn().mockResolvedValue([{ id: "item-1" }]),
-      getItem: vi.fn(),
-      updateItem: vi.fn(),
-      createItem: vi.fn(),
-      getMarkdownRules: vi.fn(),
-    };
+    });
 
     const tool = getToolDefinitions(mockService).find(
       ({ name }) => name === "get_my_qiita_articles"
@@ -117,9 +106,48 @@ describe("getToolDefinitions", () => {
       ],
     });
   });
+
+  it("returns a formatted success response for post_qiita_article", async () => {
+    const { getToolDefinitions } = await importCurrentModule();
+    const mockService = createMockQiitaService({
+      createItem: vi.fn().mockResolvedValue({
+        id: "item-1",
+        title: "Created",
+        url: "https://qiita.com/example/items/item-1",
+      }),
+    });
+
+    const tool = getToolDefinitions(mockService).find(
+      ({ name }) => name === "post_qiita_article"
+    );
+    const result = await tool?.handler({
+      title: "Created",
+      body: "Body",
+      tags: [{ name: "TypeScript" }],
+    });
+
+    expect(result).toEqual({
+      content: [
+        {
+          type: "text",
+          text:
+            "記事が正常に投稿されました。\nタイトル: Created\nURL: https://qiita.com/example/items/item-1\n\n" +
+            JSON.stringify(
+              {
+                id: "item-1",
+                title: "Created",
+                url: "https://qiita.com/example/items/item-1",
+              },
+              null,
+              2
+            ),
+        },
+      ],
+    });
+  });
 });
 
 const importCurrentModule = async () => {
   vi.resetModules();
-  return import("../../src/tools/qiitaTools.js");
+  return import("./qiitaTools.js");
 };
