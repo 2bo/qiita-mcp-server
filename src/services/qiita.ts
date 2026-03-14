@@ -2,12 +2,21 @@
  * Qiita API操作のためのサービスクラス
  * API通信の共通処理を提供します
  */
-export class QiitaApiService {
-  private readonly baseUrl = 'https://qiita.com/api/v2';
-  private apiToken: string | undefined;
+type QiitaApiServiceOptions = {
+  apiToken?: string;
+  fetchImpl?: typeof fetch;
+  baseUrl?: string;
+};
 
-  constructor() {
-    this.apiToken = process.env.QIITA_API_TOKEN;
+export class QiitaApiService {
+  private readonly baseUrl: string;
+  private apiToken: string | undefined;
+  private readonly fetchImpl: typeof fetch;
+
+  constructor(options: QiitaApiServiceOptions = {}) {
+    this.baseUrl = options.baseUrl ?? 'https://qiita.com/api/v2';
+    this.apiToken = options.apiToken ?? process.env.QIITA_API_TOKEN;
+    this.fetchImpl = options.fetchImpl ?? fetch;
   }
 
   /**
@@ -110,7 +119,7 @@ export class QiitaApiService {
   getAuthenticatedUserItems = async (page: number = 1, per_page: number = 20): Promise<any[]> => {
     this.validateToken();
 
-    const response = await fetch(
+    const response = await this.fetchImpl(
       `${this.baseUrl}/authenticated_user/items?page=${page}&per_page=${per_page}`, 
       { headers: this.getHeaders() }
     );
@@ -129,7 +138,7 @@ export class QiitaApiService {
   getItem = async (item_id: string): Promise<any> => {
     this.validateToken();
 
-    const response = await fetch(
+    const response = await this.fetchImpl(
       `${this.baseUrl}/items/${item_id}`, 
       { headers: this.getHeaders() }
     );
@@ -160,7 +169,7 @@ export class QiitaApiService {
     
     const requestBody = this.removeUndefinedFields(params);
     
-    const response = await fetch(
+    const response = await this.fetchImpl(
       `${this.baseUrl}/items/${item_id}`, 
       {
         method: 'PATCH',
@@ -195,7 +204,7 @@ export class QiitaApiService {
     
     const requestBody = this.removeUndefinedFields(params);
     
-    const response = await fetch(
+    const response = await this.fetchImpl(
       `${this.baseUrl}/items`, 
       {
         method: 'POST',
@@ -222,7 +231,7 @@ export class QiitaApiService {
     // Qiitaのmarkdownルール記事IDを固定で使用
     const item_id = "c686397e4a0f4f11683d";
     
-    const response = await fetch(
+    const response = await this.fetchImpl(
       `${this.baseUrl}/items/${item_id}`, 
       { headers: this.getHeaders() }
     );

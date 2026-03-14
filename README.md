@@ -78,6 +78,8 @@ npm install
 
 - `npm run dev` - Run TypeScript in watch mode for development
 - `npm run build` - Build the project
+- `npm test` - Run the automated test suite
+- `npm run test:watch` - Run tests in watch mode during development
 - `npm run prepare` - Prepare the package for publishing
 
 ### Contributing

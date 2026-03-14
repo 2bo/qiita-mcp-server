@@ -1,8 +1,6 @@
 import { z } from "zod";
 import { QiitaApiService } from "../services/qiita.js";
 
-const apiService = new QiitaApiService();
-
 const createSuccessResponse = (content: string): any => {
   return {
     content: [
@@ -32,7 +30,10 @@ const getUserArticlesSchema = z.object({
 });
 type GetUserArticlesParams = z.infer<typeof getUserArticlesSchema>;
 
-const getMyQiitaUserArticles = async (params: GetUserArticlesParams): Promise<any> => {
+const getMyQiitaUserArticles = async (
+  apiService: Pick<QiitaApiService, "getAuthenticatedUserItems">,
+  params: GetUserArticlesParams
+): Promise<any> => {
   try {
     const { page = 1, per_page = 20 } = params;
     const items = await apiService.getAuthenticatedUserItems(page, per_page);
@@ -48,7 +49,10 @@ const getItemSchema = z.object({
 });
 type GetItemParams = z.infer<typeof getItemSchema>;
 
-const getQiitaItem = async (params: GetItemParams): Promise<any> => {
+const getQiitaItem = async (
+  apiService: Pick<QiitaApiService, "getItem">,
+  params: GetItemParams
+): Promise<any> => {
   try {
     const { item_id } = params;
     const item = await apiService.getItem(item_id);
@@ -73,7 +77,10 @@ const postArticleSchema = z.object({
 });
 type PostArticleParams = z.infer<typeof postArticleSchema>;
 
-const postQiitaArticle = async (params: PostArticleParams): Promise<any> => {
+const postQiitaArticle = async (
+  apiService: Pick<QiitaApiService, "createItem">,
+  params: PostArticleParams
+): Promise<any> => {
   try {
     const newItem = await apiService.createItem(params);
     
@@ -101,7 +108,10 @@ const updateArticleSchema = z.object({
 });
 type UpdateArticleParams = z.infer<typeof updateArticleSchema>;
 
-const updateQiitaArticle = async (params: UpdateArticleParams): Promise<any> => {
+const updateQiitaArticle = async (
+  apiService: Pick<QiitaApiService, "updateItem">,
+  params: UpdateArticleParams
+): Promise<any> => {
   try {
     const { item_id, ...updateParams } = params;
     const updatedItem = await apiService.updateItem(item_id, updateParams);
@@ -116,7 +126,9 @@ const updateQiitaArticle = async (params: UpdateArticleParams): Promise<any> => 
   }
 };
 
-const getQiitaMarkdownRules = async (): Promise<any> => {
+const getQiitaMarkdownRules = async (
+  apiService: Pick<QiitaApiService, "getMarkdownRules">
+): Promise<any> => {
   try {
     const markdownRules = await apiService.getMarkdownRules();
     return createSuccessResponse(markdownRules);
@@ -126,37 +138,46 @@ const getQiitaMarkdownRules = async (): Promise<any> => {
   }
 };
 
-export const getToolDefinitions = () => {
+export const getToolDefinitions = (
+  apiService: Pick<
+    QiitaApiService,
+    | "getAuthenticatedUserItems"
+    | "getItem"
+    | "updateItem"
+    | "createItem"
+    | "getMarkdownRules"
+  > = new QiitaApiService()
+) => {
   return [
     {
       name: "get_my_qiita_articles",
       description: "get current authenticated user qiita articles",
       parameters: getUserArticlesSchema.shape,
-      handler: (params: GetUserArticlesParams) => getMyQiitaUserArticles(params)
+      handler: (params: GetUserArticlesParams) => getMyQiitaUserArticles(apiService, params)
     },
     {
       name: "get_qiita_item",
       description: "get a specific Qiita article by its ID",
       parameters: getItemSchema.shape,
-      handler: (params: GetItemParams) => getQiitaItem(params)
+      handler: (params: GetItemParams) => getQiitaItem(apiService, params)
     },
     {
       name: "update_qiita_article",
       description: "update an existing Qiita article",
       parameters: updateArticleSchema.shape,
-      handler: (params: UpdateArticleParams) => updateQiitaArticle(params)
+      handler: (params: UpdateArticleParams) => updateQiitaArticle(apiService, params)
     },
     {
       name: "post_qiita_article",
       description: "create a new article on Qiita",
       parameters: postArticleSchema.shape,
-      handler: (params: PostArticleParams) => postQiitaArticle(params)
+      handler: (params: PostArticleParams) => postQiitaArticle(apiService, params)
     },
     {
       name: "get_qiita_markdown_rules",
       description: "get Qiita markdown syntax rules, cheat sheet",
       parameters: {} as z.ZodRawShape,
-      handler: () => getQiitaMarkdownRules()
+      handler: () => getQiitaMarkdownRules(apiService)
     }
   ];
 };
