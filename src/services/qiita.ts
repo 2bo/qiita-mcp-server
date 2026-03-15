@@ -2,12 +2,33 @@
  * Qiita API操作のためのサービスクラス
  * API通信の共通処理を提供します
  */
-export class QiitaApiService {
-  private readonly baseUrl = 'https://qiita.com/api/v2';
-  private apiToken: string | undefined;
+type QiitaApiServiceOptions = {
+  apiToken?: string;
+  fetchImpl?: typeof fetch;
+  baseUrl?: string;
+};
 
-  constructor() {
-    this.apiToken = process.env.QIITA_API_TOKEN;
+const USER_FIELDS_TO_OMIT = [
+  "facebook_id",
+  "followees_count",
+  "followers_count",
+  "github_login_name",
+  "profile_image_url",
+  "team_only",
+  "twitter_screen_name",
+  "website_url",
+] as const;
+const MARKDOWN_RULES_ITEM_ID = "c686397e4a0f4f11683d";
+
+export class QiitaApiService {
+  private readonly baseUrl: string;
+  private apiToken: string | undefined;
+  private readonly fetchImpl: typeof fetch;
+
+  constructor(options: QiitaApiServiceOptions = {}) {
+    this.baseUrl = options.baseUrl ?? 'https://qiita.com/api/v2';
+    this.apiToken = options.apiToken ?? process.env.QIITA_API_TOKEN;
+    this.fetchImpl = options.fetchImpl ?? fetch;
   }
 
   /**
@@ -40,6 +61,25 @@ export class QiitaApiService {
   };
 
   /**
+   * 共通のJSONリクエスト処理
+   */
+  private requestJson = async <T>(
+    path: string,
+    init?: RequestInit
+  ): Promise<T> => {
+    const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
+      ...init,
+      headers: this.getHeaders(),
+    });
+
+    if (!response.ok) {
+      await this.handleErrorResponse(response);
+    }
+
+    return response.json() as Promise<T>;
+  };
+
+  /**
    * オブジェクトから不要なフィールドを削除
    */
   private removeUndefinedFields = <T extends Record<string, any>>(obj: T): T => {
@@ -58,24 +98,11 @@ export class QiitaApiService {
   private filterItem = (item: any): any => {
     // rendered_bodyを削除して、トークン数を節約
     const { rendered_body, ...rest } = item;
-    
-    // ユーザー情報も過剰なフィールドを削除
-    if (rest.user) {
-      const {
-        facebook_id,
-        followees_count,
-        followers_count,
-        github_login_name,
-        profile_image_url,
-        team_only,
-        twitter_screen_name,
-        website_url,
-        ...userRest
-      } = rest.user;
-      rest.user = userRest;
-    }
-    
-    return rest;
+
+    return {
+      ...rest,
+      user: this.filterUser(rest.user),
+    };
   };
 
   /**
@@ -84,24 +111,27 @@ export class QiitaApiService {
   private filterItems = (items: any[]): any[] => {
     return items.map(item => {
       const { rendered_body, body, ...rest } = item;
-      
-      if (rest.user) {
-        const {
-          facebook_id,
-          followees_count,
-          followers_count,
-          github_login_name,
-          profile_image_url,
-          team_only,
-          twitter_screen_name,
-          website_url,
-          ...userRest
-        } = rest.user;
-        rest.user = userRest;
-      }
-      
-      return rest;
+
+      return {
+        ...rest,
+        user: this.filterUser(rest.user),
+      };
     });
+  };
+
+  /**
+   * ユーザー情報から過剰なフィールドを削除
+   */
+  private filterUser = (user: Record<string, any> | undefined) => {
+    if (!user) {
+      return user;
+    }
+
+    const filteredUser = { ...user };
+    USER_FIELDS_TO_OMIT.forEach((field) => {
+      delete filteredUser[field];
+    });
+    return filteredUser;
   };
 
   /**
@@ -109,17 +139,9 @@ export class QiitaApiService {
    */
   getAuthenticatedUserItems = async (page: number = 1, per_page: number = 20): Promise<any[]> => {
     this.validateToken();
-
-    const response = await fetch(
-      `${this.baseUrl}/authenticated_user/items?page=${page}&per_page=${per_page}`, 
-      { headers: this.getHeaders() }
+    const items = await this.requestJson<any[]>(
+      `/authenticated_user/items?page=${page}&per_page=${per_page}`
     );
-    
-    if (!response.ok) {
-      await this.handleErrorResponse(response);
-    }
-    
-    const items = await response.json();
     return this.filterItems(items);
   };
 
@@ -128,17 +150,7 @@ export class QiitaApiService {
    */
   getItem = async (item_id: string): Promise<any> => {
     this.validateToken();
-
-    const response = await fetch(
-      `${this.baseUrl}/items/${item_id}`, 
-      { headers: this.getHeaders() }
-    );
-    
-    if (!response.ok) {
-      await this.handleErrorResponse(response);
-    }
-    
-    const item = await response.json();
+    const item = await this.requestJson(`/items/${item_id}`);
     return this.filterItem(item);
   };
 
@@ -157,23 +169,11 @@ export class QiitaApiService {
     }
   ): Promise<any> => {
     this.validateToken();
-    
     const requestBody = this.removeUndefinedFields(params);
-    
-    const response = await fetch(
-      `${this.baseUrl}/items/${item_id}`, 
-      {
-        method: 'PATCH',
-        headers: this.getHeaders(),
-        body: JSON.stringify(requestBody)
-      }
-    );
-    
-    if (!response.ok) {
-      await this.handleErrorResponse(response);
-    }
-    
-    const item = await response.json();
+    const item = await this.requestJson(`/items/${item_id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(requestBody)
+    });
     return this.filterItem(item);
   };
 
@@ -192,23 +192,11 @@ export class QiitaApiService {
     }
   ): Promise<any> => {
     this.validateToken();
-    
     const requestBody = this.removeUndefinedFields(params);
-    
-    const response = await fetch(
-      `${this.baseUrl}/items`, 
-      {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify(requestBody)
-      }
-    );
-    
-    if (!response.ok) {
-      await this.handleErrorResponse(response);
-    }
-    
-    const item = await response.json();
+    const item = await this.requestJson(`/items`, {
+      method: 'POST',
+      body: JSON.stringify(requestBody)
+    });
     return this.filterItem(item);
   };
 
@@ -218,20 +206,10 @@ export class QiitaApiService {
    */
   getMarkdownRules = async (): Promise<string> => {
     this.validateToken();
-    
-    // Qiitaのmarkdownルール記事IDを固定で使用
-    const item_id = "c686397e4a0f4f11683d";
-    
-    const response = await fetch(
-      `${this.baseUrl}/items/${item_id}`, 
-      { headers: this.getHeaders() }
+
+    const item = await this.requestJson<{ body?: string }>(
+      `/items/${MARKDOWN_RULES_ITEM_ID}`
     );
-    
-    if (!response.ok) {
-      await this.handleErrorResponse(response);
-    }
-    
-    const item = await response.json();
     return item.body || "Markdownコンテンツが見つかりませんでした。";
   };
 }
