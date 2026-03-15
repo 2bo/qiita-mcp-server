@@ -14,10 +14,12 @@
   ],
   "scripts": {
     "build": "rimraf dist && tsc && chmod +x dist/index.js",
-    "prepare": "npm run build",
     "dev": "tsc --watch",
+    "lint": "eslint .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
+    "prepack": "npm run build"
   },
   "keywords": [
     "mcp",
@@ -32,9 +34,13 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.14.0",
+    "eslint": "^10.0.3",
+    "globals": "^17.4.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.2",
+    "typescript-eslint": "^8.57.0",
     "vitest": "^3.2.4"
   },
   "engines": {

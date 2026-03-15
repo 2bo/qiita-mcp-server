@@ -78,9 +78,11 @@ npm install
 
 - `npm run dev` - Run TypeScript in watch mode for development
 - `npm run build` - Build the project
+- `npm run lint` - Run ESLint checks
 - `npm test` - Run the automated test suite
 - `npm run test:watch` - Run tests in watch mode during development
-- `npm run prepare` - Prepare the package for publishing
+- `npm run typecheck` - Run TypeScript checks without emitting files
+- `npm run prepack` - Build the package before publishing
 
 ### Contributing
 
